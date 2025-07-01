@@ -1,13 +1,18 @@
-name: Build TastyIgniter Image
+name: Build and Push to GHCR
 
 on:
   schedule:
     - cron: '0 3 * * *' # Täglich um 03:00 Uhr UTC
-  workflow_dispatch: # Manuelles Auslösen über GitHub UI
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write # 👈 notwendig für GHCR-Push
+
     steps:
       - name: Checkout your repo
         uses: actions/checkout@v4
@@ -15,15 +20,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
+          registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }} 
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ github.actor }}/tastyigniter:latest
+          tags: ghcr.io/${{ github.repository_owner }}/tastyigniter:latest
